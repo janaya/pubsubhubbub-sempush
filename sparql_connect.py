@@ -4,8 +4,8 @@ import logging
 from SPARQLWrapper import SPARQLWrapper, JSON, XML, N3, RDF
 
 DEBUG = False
-
-
+SPARQL_ENDPOINT = "http://localhost:8890/sparql"
+GRAPH = "http://localhost:8890/DAV/home/smob"
    
 
 class VirtuosoConnect:
@@ -26,7 +26,7 @@ class VirtuosoConnect:
                     PREFIX category: <http://dbpedia.org/resource/Category:>
                  """
         query = prefix + query        
-    	sparql = SPARQLWrapper("http://localhost:8890/sparql")
+    	sparql = SPARQLWrapper(SPARQL_ENDPOINT)
     	sparql.setQuery(query)
         logging.debug('Query: %r', query)
     	uris = self.returnJson(sparql, "callback")
@@ -37,7 +37,7 @@ class VirtuosoConnect:
         """This function checks if the foaf profile of the person already present or not
             TODO: This can be done in terms of ask query which returns the JSON format"""
         query = """SELECT COUNT(*) 
-               FROM <http://localhost:8890/DAV/home/smob>
+               FROM <""" + GRAPH + """>
                WHERE {
               <"""+ person_URI +"""> a foaf:Person .
               ?b foaf:primaryTopic <"""+ person_URI +"""> .

@@ -136,7 +136,7 @@ async_proxy = async_apiproxy.AsyncAPIProxy()
 ################################################################################
 # Config parameters
 
-DEBUG = False
+DEBUG = True
 
 if DEBUG:
   logging.getLogger().setLevel(logging.DEBUG)
@@ -2041,7 +2041,9 @@ def confirm_subscription(mode, topic, callback, foaf, verify_token,
   try:
     response = urlfetch.fetch(adjusted_url, method='get',
                               follow_redirects=False,
-                              deadline=MAX_FETCH_SECONDS)
+                              deadline=MAX_FETCH_SECONDS,
+                              # janaya: avoid SSLCertificateError
+                              validate_certificate=False)
   except urlfetch_errors.Error:
     error_traceback = traceback.format_exc()
     logging.warning('Error encountered while confirming subscription '
@@ -2113,10 +2115,9 @@ class SubscribeHandler(webapp.RequestHandler):
     else:
       topic = normalize_iri(topic)
     
-    if not topic or not is_valid_url(foaf):
-      error_message = ('Invalid parameter: hub.foaf; '
-                       'must be valid URI with no fragment and '
-                       'optional port %s' % ','.join(VALID_PORTS))
+    # SMOB ?
+    if not foaf or not is_valid_url(foaf):
+      error_message = ('Invalid parameter: hub.foaf; ')
     else:
       foaf = normalize_iri(foaf)
 

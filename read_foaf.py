@@ -2,6 +2,20 @@ import logging
 import rdflib
 import sparql_connect
 
+from rdflib.graph import Graph
+from rdflib.term import URIRef, Literal, BNode
+from rdflib.namespace import Namespace, RDF
+from rdflib import plugin
+
+from get_private_webid_uri import get_private_uri
+from get_private_webid_uri import request_with_client_cert
+
+from google.appengine.api import urlfetch
+
+HUB_CERTIFICATE = 'hub_cert.pem'
+HUB_KEY = 'hub_key.key'
+
+
 # Configure how we want rdflib logger to log messages
 _logger = logging.getLogger("rdflib")
 _logger.setLevel(logging.DEBUG)
@@ -9,18 +23,6 @@ _hdlr = logging.StreamHandler()
 _hdlr.setFormatter(logging.Formatter('%(name)s %(levelname)s: %(message)s'))
 _logger.addHandler(_hdlr)
 
-from rdflib.graph import Graph
-from rdflib.term import URIRef, Literal, BNode
-from rdflib.namespace import Namespace, RDF
-from rdflib import plugin
-
-HUB_CERTIFICATE = 'hub_cert.pem'
-HUB_KEY = 'hub_key.key'
-subscriber_private_uri = "http://localhost/smob/private"
-
-
-import urllib2, httplib
-import cookielib
 
 #Add Namespaces here to use it through out the file
 FOAF = Namespace("http://xmlns.com/foaf/0.1/")
@@ -40,7 +42,7 @@ class ReadFOAF:
         plugin.register('sparql', rdflib.query.Processor,
                         'rdfextras.sparql.processor', 'Processor')
         plugin.register('sparql', rdflib.query.Result,
-        	    'rdfextras.sparql.query', 'SPARQLQueryResult')
+                'rdfextras.sparql.query', 'SPARQLQueryResult')
         
     def parsefoaf(self, location, pub, topic, callback):
         """
@@ -56,20 +58,31 @@ class ReadFOAF:
         store = Graph()
         store.bind("dc", "http://http://purl.org/dc/elements/1.1/")
         store.bind("foaf", "http://xmlns.com/foaf/0.1/")
-        foaf = get_private_uri(location, HUB_CERTIFICATE, HUB_KEY)
+        
+        # Next line get errors, see get_private_webid_uri file
+        
+        #foaf = get_private_uri(location, HUB_CERTIFICATE, HUB_KEY)
+        #foaf = request_with_client_cert(location, HUB_CERTIFICATE, HUB_KEY)
+        response = urlfetch.fetch(location, validate_certificate=False)
+        logging.debug(response.status_code)
+        foaf = response.content
+        logging.debug("foaf: " + foaf)
+        #if result.status_code == 200:
+
+        
         store.parse(data=foaf, format="application/rdf+xml")
-		#store.parse("http://www.w3.org/People/Berners-Lee/card.rdf")
-		#for person in store.subjects(RDF.type, FOAF["Person"]):
-		     #print "Person:"+person
+        #store.parse("http://www.w3.org/People/Berners-Lee/card.rdf")
+        #for person in store.subjects(RDF.type, FOAF["Person"]):
+             #print "Person:"+person
         qres = store.query(
-		    """SELECT DISTINCT ?a 
-		       WHERE {
-			  ?a a <http://xmlns.com/foaf/0.1/Person> .
-			  ?b <http://xmlns.com/foaf/0.1/primaryTopic> ?a .
-		       }""")
+            """SELECT DISTINCT ?a 
+               WHERE {
+              ?a a <http://xmlns.com/foaf/0.1/Person> .
+              ?b <http://xmlns.com/foaf/0.1/primaryTopic> ?a .
+               }""")
         person_URI = ''
         for row in qres.result:
-		     person_URI = row
+             person_URI = row
         # Check whether the foaf of the person is already present in the rdf store.
         # To speed up the execution we can keep a cache of the person_URIs whose foaf profiles 
         # are present.
@@ -104,7 +117,7 @@ class ReadFOAF:
             logging.info("Adding triples to Subscriber %s", uri)
         return graph
 
-		#store.serialize("foaf.rdf", format="pretty-xml", max_depth=3)
+        #store.serialize("foaf.rdf", format="pretty-xml", max_depth=3)
     
     def to_tuples(self, graph, location):
         """
@@ -117,7 +130,7 @@ class ReadFOAF:
         for s, o, p in graph:
             triple = []
             if s.__class__ is BNode:
-				triple.append('_:'+str(s))
+                triple.append('_:'+str(s))
             else:
                 if len(str(s))==0:
                     s = location
@@ -126,27 +139,13 @@ class ReadFOAF:
             if p.__class__ is BNode:
                 triple.append('_:'+str(p))
             elif p.__class__ is URIRef:
-				triple.append('<'+str(p)+'>')
+                triple.append('<'+str(p)+'>')
             else:
-            	triple.append('"""'+str(p)+'"""')
+                triple.append('"""'+str(p)+'"""')
             triples.append(triple)
         return triples
-                        	
 
-		
-		
-class HTTPSClientAuthHandler(urllib2.HTTPSHandler):
-  # http://www.osmonov.com/2009/04/client-certificates-with-urllib2.html
-  def __init__(self, key, cert):
-    urllib2.HTTPSHandler.__init__(self)
-    self.key = key
-    self.cert = cert
-  def https_open(self, req):
-    return self.do_open(self.getConnection, req)
-  def getConnection(self, host, timeout=300):
-    return httplib.HTTPSConnection(host, key_file=self.key, cert_file=self.cert)
-
-def get_private_uri(uri, cert, key):
+def fvate_uri(uri, cert, key):
   """Request a URI that requires a client certificate
 
   Args:
@@ -164,19 +163,19 @@ def get_private_uri(uri, cert, key):
 
 
 def main():
-	read = ReadFOAF()
-	triples = read.parsefoaf("http://localhost/smob/private", True, "http://topic.com/semanticweb", "")
-        for row in triples:
-            print row[0]+' '+row[1]+' '+row[2]+' .'
-	#for s, o, p in store:
-	#	if p.__class__ is BNode:
-	#		print p
-	#	print s+'\t'+p+'\t'+q
-	#print store
+    read = ReadFOAF()
+    triples = read.parsefoaf("http://localhost/smob/private", True, "http://topic.com/semanticweb", "")
+    for row in triples:
+        print row[0]+' '+row[1]+' '+row[2]+' .'
+    #for s, o, p in store:
+    #    if p.__class__ is BNode:
+    #        print p
+    #    print s+'\t'+p+'\t'+q
+    #print store
     #     store.serialize(format='pretty-xml')
     #for statement in store:
         #print statement
     
 
 if __name__ == "__main__":
-	main()
+    main()
