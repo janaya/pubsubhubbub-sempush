@@ -27,6 +27,9 @@ _logger.addHandler(_hdlr)
 #Add Namespaces here to use it through out the file
 FOAF = Namespace("http://xmlns.com/foaf/0.1/")
 PUSH = Namespace("http://vocab.deri.ie/push/")
+RDFS = Namespace("http://www.w3.org/2000/01/rdf-schema#")
+CERT = Namespace("http://www.w3.org/ns/auth/cert#")
+RSA = Namespace("http://www.w3.org/ns/auth/rsa#")
         
         
 class ReadFOAF:
@@ -56,45 +59,79 @@ class ReadFOAF:
                 
         """
         store = Graph()
-        store.bind("dc", "http://http://purl.org/dc/elements/1.1/")
-        store.bind("foaf", "http://xmlns.com/foaf/0.1/")
+        #No need to add Namespaces, will be added when parsing the RDFXML
+        #store.bind("dc", "http://http://purl.org/dc/elements/1.1/")
+        store.bind("foaf", FOAF)
+        store.bind("rdfs", RDFS)
+        store.bind("rdf", RDF)
+        store.bind("rsa", RSA)
+        store.bind("cert", CERT)
         
-        # Next line get errors, see get_private_webid_uri file
-        
-        #foaf = get_private_uri(location, HUB_CERTIFICATE, HUB_KEY)
+        # FIXME
+        # Next line get errors, see get_private_webid_uri file 
+        import sys
+        logging.debug(sys.modules)
+        logging.debug(sys.path)
+        foaf = get_private_uri(location, HUB_CERTIFICATE, HUB_KEY)
         #foaf = request_with_client_cert(location, HUB_CERTIFICATE, HUB_KEY)
-        response = urlfetch.fetch(location, validate_certificate=False)
-        logging.debug(response.status_code)
-        foaf = response.content
-        logging.debug("foaf: " + foaf)
-        #if result.status_code == 200:
-
         
+        # getting the public foaf
+        #response = urlfetch.fetch(location, validate_certificate=False)
+        #logging.debug(response.status_code)
+        #foaf = response.content
+        #if result.status_code == 200:
+        
+        logging.debug("foaf: " + foaf)
+
+        # insert the foaf into the graph
         store.parse(data=foaf, format="application/rdf+xml")
         #store.parse("http://www.w3.org/People/Berners-Lee/card.rdf")
         #for person in store.subjects(RDF.type, FOAF["Person"]):
              #print "Person:"+person
-        qres = store.query(
-            """SELECT DISTINCT ?a 
-               WHERE {
-              ?a a <http://xmlns.com/foaf/0.1/Person> .
-              ?b <http://xmlns.com/foaf/0.1/primaryTopic> ?a .
-               }""")
-        person_URI = ''
-        for row in qres.result:
-             person_URI = row
+        
+        # No need for the query, we can get person(s) from foaf directly from 
+        # the graph
+#        qres = store.query(
+#            """SELECT DISTINCT ?a 
+#               WHERE {
+#              ?a a <http://xmlns.com/foaf/0.1/Person> .
+#              ?b <http://xmlns.com/foaf/0.1/primaryTopic> ?a .
+#               }""")
+#        person_URI = ''
+#        for row in qres.result:
+#             person_URI = row
+
+        # FIXME: what if there're more than one persons?
+        person_URI = [p for p in store.subjects(RDF.type, FOAF["Person"])][0]
+
         # Check whether the foaf of the person is already present in the rdf store.
         # To speed up the execution we can keep a cache of the person_URIs whose foaf profiles 
         # are present.
+
         logging.info("Checking whether foaf: %s is already present in the RDF store", person_URI)
         if self.triple_store.foaf_exists(person_URI):
+            # if foaf already in in the rdf store, then reset the graph as 
+            # there's no need to add person foaf again
+            # FIXME: is needed to add PuSH triples? 
             store = Graph()
             logging.info("foaf: %s is already present in the RDF store", person_URI)
+
         # Add the rest of the required triples to the graph
         store = self.addTriples(store, person_URI, pub, topic, callback)
-        # Transform the graph to triples 
-        triples = self.to_tuples(store, location)
-         
+        
+        # Transform the graph to triples
+        # no need for the manual transformation function, just
+        #triples = self.to_tuples(store, location)
+        triples = store.serialize(format="turtle")
+        logging.debug("triples: "+triples)
+#        prefixes = ["@prefix "+ns[0]+": "+ns[1].n3()+" .\n" for ns in store.namespaces()]
+#        logging.debug("prefixes: ")
+#        logging.debug(prefixes)
+#        for p in prefixes: triples=triples.replace(p,"")
+#        logging.debug("triples: ")
+#        logging.debug(triples)
+        
+        # Now we're returning an string, no more a list
         return triples
     
     def addTriples(self, graph, uri, pub, topic, callback):
@@ -107,6 +144,8 @@ class ReadFOAF:
             Returns graph 
         """
         smobAccount = uri+"-smob"
+        # Here we do need the PuSH namespace, as it has not been added before
+        graph.bind("push", PUSH)
         graph.add((URIRef(uri), FOAF["holdsAccount"], URIRef(smobAccount)))
         if pub:
             graph.add((URIRef(topic), PUSH["has_owner"], URIRef(smobAccount)))
@@ -117,8 +156,6 @@ class ReadFOAF:
             logging.info("Adding triples to Subscriber %s", uri)
         return graph
 
-        #store.serialize("foaf.rdf", format="pretty-xml", max_depth=3)
-    
     def to_tuples(self, graph, location):
         """
         Method: to_tuples(graph)
@@ -144,23 +181,6 @@ class ReadFOAF:
                 triple.append('"""'+str(p)+'"""')
             triples.append(triple)
         return triples
-
-def fvate_uri(uri, cert, key):
-  """Request a URI that requires a client certificate
-
-  Args:
-    uri: The URI string to request.
-    cert: The x509 client certificate file path
-    key: the certificate key file path
-
-  Returns:
-    An ascii string with the response.
-  """
-  cj = cookielib.LWPCookieJar()
-  opener = urllib2.build_opener(HTTPSClientAuthHandler(key, cert), urllib2.HTTPCookieProcessor(cj))
-  response = opener.open(uri)
-  return response.read()
-
 
 def main():
     read = ReadFOAF()

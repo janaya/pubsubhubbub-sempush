@@ -43,18 +43,37 @@ HUB_KEY = 'hub_key.key'
 subscriber_private_uri = "https://localhost/smob/private"
 
 
-import urllib2, httplib
+import urllib2
 import cookielib
+import sys, imp
+import httplib
 
 # google appengine urlfetch doesn't implement client certificates:
 # http://groups.google.com/group/google-appengine-python/msg/42c92d537c6e85da
 
 class HTTPSClientAuthHandler(urllib2.HTTPSHandler):
   # http://www.osmonov.com/2009/04/client-certificates-with-urllib2.html
+
+#  name = 'httplib'
+#  fp = open('/usr/lib/python2.7/httplib.py', 'U')
+#  pathname = 'httplib.py'
+#  description = ('.py', 'U', 1)
+#  try:
+#    module['httplib'] = imp.load_module(name, fp, pathname, description)
+#  finally:
+#    # Since we may exit via an exception, close fp explicitly.
+#    if fp:
+#        fp.close()
+#  logging.debug(sys.modules)
+  # raise: NotImplementedError: Only importing packages is supported on App Engine
+  #sys.path.append(r'/usr/lib/python2.7/httplib.py')
+  #sys.path.insert(0, cmd_folder)
+
   def __init__(self, key, cert):
     urllib2.HTTPSHandler.__init__(self)
     self.key = key
     self.cert = cert
+    
   def https_open(self, req):
     return self.do_open(self.getConnection, req)
   def getConnection(self, host, timeout=300):

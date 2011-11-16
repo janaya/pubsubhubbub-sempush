@@ -806,9 +806,17 @@ class Subscription(db.Model):
       #The object can be instantiated only once to connect and multiple inserts can be done
       #Parse the FOAF and obtain triples including the PUsH vocab triples
       triples = reader.parsefoaf(foaf, False, topic, callback)
+
       #Add the triples to the triple store
-      connect.insertTriples(triples)
-      #connect.insert(foaf)
+      #connect.insertTriples(triples)
+      #connect.insert(triples)
+              
+      results = urlfetch.fetch(url="http://localhost:8001/data/http://smob.me/subscribers",
+                    payload=triples,
+                    method=urlfetch.PUT,
+                    headers={'Content-Type': 'application/x-turtle'})
+      # curl -T file.rdf -H 'Content-Type: application/x-turtle' 'http://localhost:8000/data/data.rdf'
+
       #SMOB: END code
       return sub_is_new
     return db.run_in_transaction(txn)
@@ -3155,7 +3163,7 @@ class RecordFeedHandler(webapp.RequestHandler):
       known_feed = KnownFeed.create(topic)
 
     try:
-      response = urlfetch.fetch(topic)
+      response = urlfetch.fetch(topic, validate_certificate=False)
     except (apiproxy_errors.Error, urlfetch.Error):
       logging.exception('Could not fetch topic = %s for feed ID', topic)
       known_feed.put()
