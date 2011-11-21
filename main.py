@@ -101,11 +101,11 @@ import wsgiref.handlers
 import xml.sax
 #SMOB: Start import libraries
 import sparql_connect
-import read_foaf
+import profile_manager
 from BeautifulSoup import BeautifulStoneSoup
 from sets import Set
-reader = read_foaf.ReadFOAF()
-connect=sparql_connect.VirtuosoConnect()
+pm = profile_manager.ProfileManager()
+#connect=sparql_connect.VirtuosoConnect()
 #SMOB: End
 
 from google.appengine import runtime
@@ -741,6 +741,7 @@ class Subscription(db.Model):
       String containing the key name for the corresponding Subscription.
     """
     return get_hash_key_name(u'%s\n%s' % (callback, topic))
+    
 #SMOB: Startcode to insert the foaf profile
 # Added the foaf profile as a parameter
   @classmethod
@@ -805,17 +806,11 @@ class Subscription(db.Model):
       #SMOB: Start Code == to connect and insert few details of the subscriber
       #The object can be instantiated only once to connect and multiple inserts can be done
       #Parse the FOAF and obtain triples including the PUsH vocab triples
-      triples = reader.parsefoaf(foaf, False, topic, callback)
+      triples = pm.get_or_create_subscriber_profile(foaf, callback, topic)
 
       #Add the triples to the triple store
       #connect.insertTriples(triples)
       #connect.insert(triples)
-              
-      results = urlfetch.fetch(url="http://localhost:8001/data/http://smob.me/subscribers",
-                    payload=triples,
-                    method=urlfetch.PUT,
-                    headers={'Content-Type': 'application/x-turtle'})
-      # curl -T file.rdf -H 'Content-Type: application/x-turtle' 'http://localhost:8000/data/data.rdf'
 
       #SMOB: END code
       return sub_is_new
@@ -2425,7 +2420,7 @@ class PublishHandler(PublishHandlerBase):
                     self.response.out.write('MUST supply foaf profile location of publisher once for every topic published')
                     return
             for url in urls:
-                triples = reader.parsefoaf(foaf, True, url, '')
+                triples = pm.get_or_create_publisher_profile(foaf, url)
                 #Add the triples to the triple store
                 connect.insertTriples(triples)
         else:    
@@ -2440,7 +2435,7 @@ class PublishHandler(PublishHandlerBase):
                         self.response.set_status(400)
                         self.response.out.write('MUST supply foaf profile location of publisher once for every topic published')
                         return
-                    triples = reader.parsefoaf(foaf, True, existing_url, '')
+                    triples = pm.get_or_create_publisher_profile(foaf, existing_url)
                     #Add the triples to the triple store
                     connect.insertTriples(triples)
     #SMOB: End code
@@ -2554,11 +2549,14 @@ def pull_feed(feed_to_fetch, fetch_url, headers):
     apiproxy_errors.Error if any RPC errors are encountered. urlfetch.Error if
     there are any fetching API errors.
   """
+  logging.debug("remove me, pull_feed urlfetch")
   response = urlfetch.fetch(
       fetch_url,
       headers=headers,
       follow_redirects=False,
-      deadline=MAX_FETCH_SECONDS)
+      deadline=MAX_FETCH_SECONDS, 
+      #janaya
+      validate_certificate=False)
   return response.status_code, response.headers, response.content
 
 
@@ -2587,13 +2585,21 @@ def pull_feed_async(feed_to_fetch, fetch_url, headers, async_proxy, callback):
              getattr(response, 'headers', None),
              getattr(response, 'content', None),
              exception)
-  urlfetch_async.fetch(fetch_url,
+  logging.debug("remove me, pull_feed urlfetch_async")
+#  urlfetch_async.fetch(fetch_url,
+#                       headers=headers,
+#                       follow_redirects=False,
+#                       async_proxy=async_proxy,
+#                       callback=wrapper,
+#                       deadline=MAX_FETCH_SECONDS,
+#                       #janaya
+#                       validate_certificate=False)
+  urlfetch.fetch(fetch_url,
                        headers=headers,
                        follow_redirects=False,
-                       async_proxy=async_proxy,
-                       callback=wrapper,
-                       deadline=MAX_FETCH_SECONDS)
-
+                       deadline=MAX_FETCH_SECONDS,
+                       #janaya
+                       validate_certificate=False)
 
 def inform_event(event_to_deliver, alternate_topics):
   """Helper hook informs the Hub of new notifications.
@@ -2923,13 +2929,16 @@ def push_event(sub, headers, payload, async_proxy, callback):
       Subscription instance, result is the urlfetch.Response instance, and
       exception is any exception encountered, if any.
   """
+  logging.debug("remove me, push_event urlfetch_async")
   urlfetch_async.fetch(sub.callback,
                        method='POST',
                        headers=headers,
                        payload=payload,
                        async_proxy=async_proxy,
                        callback=callback,
-                       deadline=MAX_FETCH_SECONDS)
+                       deadline=MAX_FETCH_SECONDS,
+                       #janaya
+                       validate_certificate=False)
 
 
 class PushEventHandler(webapp.RequestHandler):
