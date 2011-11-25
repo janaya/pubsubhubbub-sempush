@@ -1,0 +1,29 @@
+K 25
+svn:wc:ra_dav:version-url
+V 48
+/svn/!svn/ver/123/trunk/publisher_clients/python
+END
+pubsubhubbub_publish_test.py
+K 25
+svn:wc:ra_dav:version-url
+V 77
+/svn/!svn/ver/122/trunk/publisher_clients/python/pubsubhubbub_publish_test.py
+END
+pubsubhubbub_publish.py
+K 25
+svn:wc:ra_dav:version-url
+V 72
+/svn/!svn/ver/122/trunk/publisher_clients/python/pubsubhubbub_publish.py
+END
+setup.py
+K 25
+svn:wc:ra_dav:version-url
+V 57
+/svn/!svn/ver/123/trunk/publisher_clients/python/setup.py
+END
+CHANGES
+K 25
+svn:wc:ra_dav:version-url
+V 56
+/svn/!svn/ver/122/trunk/publisher_clients/python/CHANGES
+END

@@ -1,10 +1,15 @@
 10
 
 dir
-0
-http://knoesis-svn.cs.wright.edu/svn/pavan/pubsubhubbub/trunk/pshb-example/pubsubhubbub/hub/google3/apphosting/runtime
-http://knoesis-svn.cs.wright.edu/svn/pavan
-add
+406
+http://pubsubhubbub.googlecode.com/svn/trunk/google3/apphosting/runtime
+http://pubsubhubbub.googlecode.com/svn
+
+
+
+2008-10-03T07:27:55.987721Z
+19
+bslatkin
 
 
 
@@ -12,7 +17,6 @@ add
 
 
 
-svn:special svn:externals svn:needs-lock
 
 
 
@@ -20,23 +24,5 @@ svn:special svn:externals svn:needs-lock
 
 
 
-
-
-
-
-8661c0b3-8f0a-4391-bfa0-cfeaea3dbe21
-
-__init__.py
-file
-
-
-
-add
-
-_apphosting_runtime___python__apiproxy.py
-file
-
-
-
-add
+ad9c9841-ba53-0410-b846-bb8d69ff4585
 

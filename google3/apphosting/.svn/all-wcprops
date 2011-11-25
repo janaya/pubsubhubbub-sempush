@@ -1,11 +1,5 @@
 K 25
 svn:wc:ra_dav:version-url
-V 45
-/svn/!svn/ver/19/trunk/hub/google3/apphosting
-END
-__init__.py
-K 25
-svn:wc:ra_dav:version-url
-V 57
-/svn/!svn/ver/19/trunk/hub/google3/apphosting/__init__.py
+V 41
+/svn/!svn/ver/19/trunk/google3/apphosting
 END
