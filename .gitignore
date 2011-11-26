@@ -1,0 +1,8 @@
+*.pyc
+*~
+.profile_manager.py.swp
+.project
+.pydevproject
+hub/SPARQLWrapper
+hub/rdflib
+hub/BeautifulSoup.py

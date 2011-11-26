@@ -187,7 +187,7 @@ class AtomFeedHandler(FeedContentHandler):
 
   def handleEvent(self, event, content):
     #SMOB: Logging to see content of each feed
-    #logging.info('content: %r', content)
+    logging.debug('feed_diff.py AtomFeedHandler.handleEvent, content: %r', content)
     depth, tag = event[0], event[1].lower()
     if depth == 1:
       if tag != 'feed' and not tag.endswith(':feed'):
@@ -231,6 +231,7 @@ class RssFeedHandler(FeedContentHandler):
   """Sax content handler for RSS feeds."""
 
   def handleEvent(self, event, content):
+    logging.debug('feed_diff.py RssFeedHandler.handleEvent, content: %r', content)
     depth, tag = event[0], event[1].lower()
     if depth == 1:
       if (tag != 'rss' and not tag.endswith(':rss')
@@ -308,6 +309,7 @@ def filter(data, format):
     be derived due to bad content (e.g., a good XML doc that is not Atom or RSS)
     or any of the feed entries are missing required fields.
   """
+  logging.debug('feed_diff.py filter')
   data_stream = cStringIO.StringIO(data)
   parser = xml.sax.make_parser()
 

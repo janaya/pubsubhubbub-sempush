@@ -1121,6 +1121,7 @@ class FeedToFetch(db.Model):
     Returns:
       The list of FeedToFetch records that was created.
     """
+    logging.debug("main.py FeedToFetch.insert, topic_list %s" % ' '.join(topic_list))
     if not topic_list:
       return
 
@@ -1155,7 +1156,7 @@ class FeedToFetch(db.Model):
     finally:
       if memory_only:
         cls.FORK_JOIN_QUEUE.add(work_index)
-
+    logging.debug("main.py FeedToFetch.insert, feed_list %s"% ' '.join(topic_list))
     return feed_list
 
   def fetch_failed(self,
@@ -1209,6 +1210,7 @@ class FeedToFetch(db.Model):
 
   def _enqueue_retry_task(self):
     """Enqueues a task to retry fetching this feed."""
+    logging.debug("main.py FeedToFetch._enqueue_retry_task")
     RETRIES = 3
 
     if os.environ.get('HTTP_X_APPENGINE_QUEUENAME') == POLLING_QUEUE:
@@ -1288,6 +1290,7 @@ class FeedRecord(db.Model):
       The list of FeedRecords corresponding to the input topic list in the
       same order they were supplied.
     """
+    logging.debug("main.py FeedRecord.get_or_create_all")
     key_list = [db.Key.from_path(cls.kind(), cls.create_key_name(t))
                 for t in topic_list]
     found_list = db.get(key_list)
@@ -1508,6 +1511,7 @@ class EventToDeliver(db.Expando):
     Returns:
       A new EventToDeliver instance that has not been stored.
     """
+    logging.debug("main.py EventToDeliver.create_event_for_topic, topic %s" % topic )
     if format in (ATOM, RSS):
       # This is feed XML.
       close_index = header_footer.rfind('</')
@@ -2341,6 +2345,7 @@ class PublishHandlerBase(webapp.RequestHandler):
     Returns:
       The error message, or an empty string if there are no errors.
     """
+    logging.debug("main.py PublishHandlerBase.receive_publish")
     urls = hooks.execute(preprocess_urls, urls)
     for url in urls:
       if not is_valid_url(url):
@@ -2421,8 +2426,9 @@ class PublishHandler(PublishHandlerBase):
                     return
             for url in urls:
                 triples = pm.get_or_create_publisher_profile(foaf, url)
+                logging.debug('main.py PublishHandler.post, created publisher in store')
                 #Add the triples to the triple store
-                connect.insertTriples(triples)
+                #connect.insertTriples(triples)
         else:    
             for existing_url in existing_urls:
                 present = False
@@ -2436,8 +2442,9 @@ class PublishHandler(PublishHandlerBase):
                         self.response.out.write('MUST supply foaf profile location of publisher once for every topic published')
                         return
                     triples = pm.get_or_create_publisher_profile(foaf, existing_url)
+                    logging.debug('main.py PublishHandler.post, created publisher in store')
                     #Add the triples to the triple store
-                    connect.insertTriples(triples)
+                    #connect.insertTriples(triples)
     #SMOB: End code
 
     logging.debug('Publish event for %d URLs: %s', len(urls), urls)
@@ -2789,6 +2796,7 @@ class PullFeedHandler(webapp.RequestHandler):
   """Background worker for pulling feeds."""
 
   def _handle_fetches(self, feed_list):
+    logging.debug('main.py PullFeedHandler._handle_fetches')
     """Handles a set of FeedToFetch records that need to be fetched."""
     ready_feed_list = []
     scorer_results = FETCH_SCORER.filter([f.topic for f in feed_list])
@@ -2929,7 +2937,7 @@ def push_event(sub, headers, payload, async_proxy, callback):
       Subscription instance, result is the urlfetch.Response instance, and
       exception is any exception encountered, if any.
   """
-  logging.debug("remove me, push_event urlfetch_async")
+  logging.debug('main.py push_event')
   urlfetch_async.fetch(sub.callback,
                        method='POST',
                        headers=headers,

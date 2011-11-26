@@ -9,8 +9,8 @@ from SPARQLWrapper import SPARQLWrapper, JSON, XML, N3
 from rdflib import Namespace
 
 from get_private_webid_uri import get_private_uri
-
 from google.appengine.api import urlfetch
+import urllib
 
 
 # Configure how we want rdflib logger to log messages
@@ -39,10 +39,11 @@ ENDPOINT_DATA = "http://localhost:8001/data/"
 SPARQL_ENDPOINT = "http://localhost:8001/sparql/"
 ENDPOINT_UPDATE = "http://localhost:8001/update/"
 
+HUB_CERTIFICATE_URI = 'http://localhost:8080/cert'
 HUB_CERTIFICATE_P12 = 'hub_cert.p12'
 HUB_CERTIFICATE = 'hub_cert.pem'
 HUB_KEY = 'hub_key.key'
-HUB_WEBID = 'http:localhost:8080/me'
+HUB_WEBID = 'http://localhost:8080/me'
 
 
 
@@ -63,39 +64,101 @@ serializers = {
 def ns_string(ns):
     return "\n".join(["PREFIX "+k+" : "+v.n3() for k,v in ns.items()])
 
+def jsondict2graph(json_dict):
+    g = Graph()
+    [g.bind(*x) for x in ns_store.items()]
+    for triple in json_dict['results']['bindings']:
+        ts = triple['s'].get('type',None)
+        vs = triple['s']['value']
+        if ts == 'uri':
+            s = URIRef(vs)
+        elif ts == 'literal':
+            s = Literal(vs)
+        elif ts == 'bnode':
+            s = BNode(vs)
+        #logging.debug(s)
+        
+        p = URIRef(triple['p']['value'])
+        #logging.debug(p)
+        
+        to = triple['o'].get('type',None)
+        vo = triple['o']['value']
+        dto = triple['o'].get('datatype',None)
+        if to == 'uri':
+            o = URIRef(triple['o']['value'])
+        elif to == 'literal':
+            o = Literal(triple['o']['value'])
+            if dto:
+                o.datatype = URIRef(dto)
+        elif ts == 'bnode':
+            o = BNode(vo)
+        #logging.debug(o)
+        g.add((s,p,o))
+    logging.debug(g.serialize(format='turtle'))
+    return g
+
 class ProfileManager:
+
+    def create_callback(self, rpc):
+        response = rpc.get_result()
+        return response.content
+
     def get_graph_from_uri(self, foaf_uri):
         graph = Graph()
         [graph.bind(*x) for x in ns_profile.items()]
 
         # getting the public foaf and inserting into the graph
 
+        # FIXME
         # cant retrieve directly the url, GAE doesn't allow open sockets:
         # sock = socket.create_connection((self.host, self.port),
         # AttributeError: 'module' object has no attribute 'create_connection'
         #store.parse(location)
+        #response = get_private_uri(foaf_uri, HUB_CERTIFICATE, HUB_KEY)
+        #foaf = response.read()
 
-        # FIXME
-        # Next line get errors, see get_private_webid_uri file 
-        response = get_private_uri(location, HUB_CERTIFICATE, HUB_KEY)
-
-        # so using GAE urlfetch...
+        # workaround using GAE urlfetch...
         #response = urlfetch.fetch(foaf_uri, validate_certificate=False)
         # passing certificate in another manual way...
+        
+        # not able either to open files
+        #raise IOError(errno.EACCES, 'file not accessible', filename)
         #cert_file = open(HUB_CERTIFICATE_P12)
         #cert_data = cert_file.read()
         #response = urlfetch.fetch(foaf_uri, 
-        #                          payload = 
+        #                          payload = cert_data
         #                          method=urlfetch.POST,
         #                          headers={'Content-Type': "application/x-x509-user-cert",
         #                                   'webid_uri': HUB_WEBID},
         #                          validate_certificate=False)
         
+        # timeout due to it is processing the subscriber cert and webid requests?
+        form_fields = {"cert_uri": HUB_CERTIFICATE_URI}
+        form_data = urllib.urlencode(form_fields)
+        response = urlfetch.fetch(url=foaf_uri,
+                        payload=form_data,
+                        method=urlfetch.POST,
+                        headers={'Content-Type': 'application/x-www-form-urlencoded'},
+                        validate_certificate=False,
+                        deadline=60)
+
+        # assert self.__rpc.state != apiproxy_rpc.RPC.IDLE, repr(self.state)
+        # AssertionError: 0
+        #rpc = urlfetch.create_rpc()
+        #rpc.callback = self.create_callback(rpc)
+        #rpc.deadline = 60
+        #urlfetch.make_fetch_call(rpc = rpc,
+        #                url=foaf_uri,
+        #                payload=form_data,
+        #                method=urlfetch.POST,
+        #                headers={'Content-Type': 'application/x-www-form-urlencoded'},
+        #                follow_redirects = True)
+        #rpc.wait()
+
+        foaf = response.content
         content_type = response.headers['content-type'].split(';')[0]
         logging.debug(content_type)
         #logging.debug(response.status_code)
-        foaf = response.read()
-        #foaf = response.content
         #if response.status_code == 200:
         logging.debug("foaf: " + foaf)
 
@@ -123,22 +186,27 @@ class ProfileManager:
 
     def select(self, graph_uri):
         graph = Graph()
+        #FIXME: hackish
+        graph_uri = graph_uri.rstrip('#me')
+        logging.debug("graph uri"+graph_uri)
         query = """
 SELECT * WHERE { GRAPH <""" + graph_uri + """> { ?s ?p ?o } }"""
         logging.debug("going to execute " + query)
         sparql = SPARQLWrapper(SPARQL_ENDPOINT)
         sparql.setQuery(query)
-        sparql.setReturnFormat('rdf')
+        #sparql.setReturnFormat('rdf')
+        # can't check content-type, so json
+        sparql.setReturnFormat(JSON)
         try:
             ret = sparql.query()
-            graph = ret.convert()
-            #graph = sparql.query().convert()
-            logging.debug(ret.variables)
+            json_dict = ret.convert()
+            logging.debug(json_dict)
+            graph = jsondict2graph(json_dict)
             logging.debug(graph)
+            return graph
         except:
             sys.exc_info()
             logging.exception("WHAT HAPPENED?")
-        return graph
 
     def insert(self, graph_uri, graph):
         triples = graph.serialize(format="turtle")
@@ -185,10 +253,13 @@ SELECT * WHERE { GRAPH <""" + graph_uri + """> { ?s ?p ?o } }"""
         foaf_uri = [p for p in foaf_graph.subjects(RDF.type, FOAF["Person"])][0]
         store_graph = self.select(foaf_uri)
         smobAccount = foaf_uri+"-smob"
-        if foaf_uri in store_graph.subjects(RDF.type, FOAF["Person"]):
-            if topic not in store_graph.subjects(PUSH['has_subscriber'], URIRef(smobAccount)):
-                graph = self.add_topic_has_subscriber(store_graph, foaf_uri, topic, callback, smobAccount)
-                self.update(foaf_uri, graph)
+        if store_graph:
+            if foaf_uri in store_graph.subjects(RDF.type, FOAF["Person"]):
+                logging.debug("%s was already in the store" % foaf_uri) 
+                if topic not in store_graph.subjects(PUSH['has_subscriber'], URIRef(smobAccount)):
+                    logging.debug("%s was not yet in the store" % topic) 
+                    graph = self.add_topic_has_subscriber(store_graph, foaf_uri, topic, callback, smobAccount)
+                    self.update(foaf_uri, graph)
         else:
             graph = self.add_push_subscriber(foaf_graph, foaf_uri, topic, callback, smobAccount)
             self.insert(foaf_uri, graph)
@@ -199,10 +270,11 @@ SELECT * WHERE { GRAPH <""" + graph_uri + """> { ?s ?p ?o } }"""
         foaf_uri = [p for p in foaf_graph.subjects(RDF.type, FOAF["Person"])][0]
         store_graph = self.select(foaf_uri)
         smobAccount = foaf_uri+"-smob"
-        if foaf_uri in store_graph.subjects(RDF.type, FOAF["Person"]):
-            if topic not in store_graph.subjects(PUSH['has_owner'], URIRef(smobAccount)):
-                graph = self.add_topic_has_owner(store_graph, topic, smobAccount)
-                self.update(foaf_uri, graph)
+        if store_graph:
+            if foaf_uri in store_graph.subjects(RDF.type, FOAF["Person"]):
+                if topic not in store_graph.subjects(PUSH['has_owner'], URIRef(smobAccount)):
+                    graph = self.add_topic_has_owner(store_graph, topic, smobAccount)
+                    self.update(foaf_uri, graph)
         else:
             graph = self.add_push_publiher(foaf_graph, uri, topic, smobAccount)
             self.insert(foaf_uri, graph)
