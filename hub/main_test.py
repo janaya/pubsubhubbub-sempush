@@ -2788,6 +2788,7 @@ class PushEventHandlerTest(testutil.HandlerTestBase):
     finally:
       dos.DISABLE_FOR_TESTING = True
 
+
 ################################################################################
 
 class SubscribeHandlerTest(testutil.HandlerTestBase):

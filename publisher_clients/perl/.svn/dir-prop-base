@@ -1,0 +1,9 @@
+K 10
+svn:ignore
+V 40
+Makefile
+blib
+pm_to_blib
+svn-commit.tmp
+
+END

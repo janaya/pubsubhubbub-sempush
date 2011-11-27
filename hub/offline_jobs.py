@@ -34,6 +34,7 @@ from mapreduce import operation as op
 from mapreduce import util
 
 
+
 class CleanupOldEventToDeliver(object):
   """Removes EventToDeliver instances older than a certain value."""
 
@@ -90,7 +91,6 @@ class CountSubscribers(object):
         yield op.counters.Increment(the_match.group(1))
       elif the_match:
         yield op.counters.Increment('matched but inactive')
-
 
 class SubscriptionReconfirmMapper(object):
   """For reconfirming subscriptions that are nearing expiration."""

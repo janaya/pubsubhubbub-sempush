@@ -1,0 +1,71 @@
+K 25
+svn:wc:ra_dav:version-url
+V 35
+/svn/!svn/ver/147/trunk/bookmarklet
+END
+bookmarklet_jsonp.min.js
+K 25
+svn:wc:ra_dav:version-url
+V 59
+/svn/!svn/ver/74/trunk/bookmarklet/bookmarklet_jsonp.min.js
+END
+bookmarklet_config.html
+K 25
+svn:wc:ra_dav:version-url
+V 59
+/svn/!svn/ver/147/trunk/bookmarklet/bookmarklet_config.html
+END
+bookmarklet_gadget.xml
+K 25
+svn:wc:ra_dav:version-url
+V 57
+/svn/!svn/ver/72/trunk/bookmarklet/bookmarklet_gadget.xml
+END
+bookmarklet.js
+K 25
+svn:wc:ra_dav:version-url
+V 49
+/svn/!svn/ver/74/trunk/bookmarklet/bookmarklet.js
+END
+generate_config.py
+K 25
+svn:wc:ra_dav:version-url
+V 53
+/svn/!svn/ver/74/trunk/bookmarklet/generate_config.py
+END
+jsmin.py
+K 25
+svn:wc:ra_dav:version-url
+V 43
+/svn/!svn/ver/72/trunk/bookmarklet/jsmin.py
+END
+bookmarklet.min.js
+K 25
+svn:wc:ra_dav:version-url
+V 53
+/svn/!svn/ver/74/trunk/bookmarklet/bookmarklet.min.js
+END
+bookmarklet_config.template
+K 25
+svn:wc:ra_dav:version-url
+V 63
+/svn/!svn/ver/147/trunk/bookmarklet/bookmarklet_config.template
+END
+bookmarklet.html
+K 25
+svn:wc:ra_dav:version-url
+V 51
+/svn/!svn/ver/74/trunk/bookmarklet/bookmarklet.html
+END
+Makefile
+K 25
+svn:wc:ra_dav:version-url
+V 43
+/svn/!svn/ver/74/trunk/bookmarklet/Makefile
+END
+bookmarklet_jsonp.js
+K 25
+svn:wc:ra_dav:version-url
+V 55
+/svn/!svn/ver/74/trunk/bookmarklet/bookmarklet_jsonp.js
+END

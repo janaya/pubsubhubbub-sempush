@@ -1,0 +1,35 @@
+K 25
+svn:wc:ra_dav:version-url
+V 34
+/svn/!svn/ver/153/trunk/subscriber
+END
+app.yaml
+K 25
+svn:wc:ra_dav:version-url
+V 42
+/svn/!svn/ver/37/trunk/subscriber/app.yaml
+END
+subscriber.html
+K 25
+svn:wc:ra_dav:version-url
+V 50
+/svn/!svn/ver/133/trunk/subscriber/subscriber.html
+END
+feedparser.py
+K 25
+svn:wc:ra_dav:version-url
+V 47
+/svn/!svn/ver/24/trunk/subscriber/feedparser.py
+END
+index.yaml
+K 25
+svn:wc:ra_dav:version-url
+V 44
+/svn/!svn/ver/37/trunk/subscriber/index.yaml
+END
+main.py
+K 25
+svn:wc:ra_dav:version-url
+V 42
+/svn/!svn/ver/153/trunk/subscriber/main.py
+END

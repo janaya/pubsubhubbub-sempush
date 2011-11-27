@@ -3,3 +3,10 @@
 .svn
 ._*
 *~
+.profile_manager.py.swp
+.project
+.pydevproject
+.svn*
+hub/SPARQLWrapper
+hub/rdflib
+hub/BeautifulSoup.py

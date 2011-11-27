@@ -1,0 +1,35 @@
+K 25
+svn:wc:ra_dav:version-url
+V 33
+/svn/!svn/ver/155/trunk/publisher
+END
+atom.xml
+K 25
+svn:wc:ra_dav:version-url
+V 42
+/svn/!svn/ver/155/trunk/publisher/atom.xml
+END
+app.yaml
+K 25
+svn:wc:ra_dav:version-url
+V 42
+/svn/!svn/ver/155/trunk/publisher/app.yaml
+END
+input.html
+K 25
+svn:wc:ra_dav:version-url
+V 44
+/svn/!svn/ver/155/trunk/publisher/input.html
+END
+index.yaml
+K 25
+svn:wc:ra_dav:version-url
+V 43
+/svn/!svn/ver/37/trunk/publisher/index.yaml
+END
+main.py
+K 25
+svn:wc:ra_dav:version-url
+V 41
+/svn/!svn/ver/155/trunk/publisher/main.py
+END
