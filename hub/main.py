@@ -769,7 +769,7 @@ class Subscription(db.Model):
     """
     "SMOB: This is the place I am collecting the data and inserting into a map"
     "Start: Print"
-    logging.info('Start: Subscription Insertion, '
+    logging.info('Subscription.insert , '
                  'callback = %s, topic = %s', callback, topic)
     "End: Print"
     key_name = cls.create_key_name(callback, topic)
@@ -1601,10 +1601,10 @@ class EventToDeliver(db.Expando):
               relevant one '''
       
       #VIDEO: SMOB Video 
-      #logging.info('-------Total Number of subscribers: %r', len(all_subscribers))
-      #for subscriber in all_subscribers:
-        #logging.info('--Subscriber: %r', subscriber.callback)
-        #logging.info('--------------')
+      logging.debug('-------Total Number of subscribers: %r', len(all_subscribers))
+      for subscriber in all_subscribers:
+        logging.debug('--Subscriber: %r', subscriber.callback)
+        logging.debug('--------------')
       #SMOB: Start code to execute the SPARQL Queries and get the call back URLs
       #A set to hold the call back URIs. Possibily of two call_back URIs received
       #by two SPARQL queries
@@ -1616,8 +1616,7 @@ class EventToDeliver(db.Expando):
         #The object can be instantiated only once to connect and multiple inserts can be done
         #SMOB: This is the place to change code for getting the sparql queries
         logging.debug('Access Space: %r', restriction)
-        pm = ProfileManager()
-        callback_uris.update(set(pm.select_callback(restriction)))
+        callback_uris.update(set(self.pm.select_callback(restriction)))
         logging.debug('Callbacks from SPARQL: %r', callback_uris)
       
       for subscriber in all_subscribers:
@@ -1627,10 +1626,10 @@ class EventToDeliver(db.Expando):
               
       all_subscribers=revised_subscribers
       #VIDEO: SMOB Video 
-      #logging.info('-------Total Number of subscribers with access: %r', len(all_subscribers))
-      #for subscriber in all_subscribers:
-        #logging.info('--Subscriber: %r', subscriber.callback)
-        #logging.info('--------------')
+      logging.debug('-------Total Number of subscribers with access: %r', len(all_subscribers))
+      for subscriber in all_subscribers:
+        logging.debug('--Subscriber: %r', subscriber.callback)
+        logging.debug('--------------')
       #SMOB: End code
       more_subscribers = len(all_subscribers) > chunk_size
       subscription_list = all_subscribers[:chunk_size]
@@ -2117,18 +2116,17 @@ def confirm_subscription(mode, topic, callback, foaf, verify_token,
   try:
     response = urlfetch.fetch(adjusted_url, method='get',
                               follow_redirects=False,
-
                               deadline=MAX_FETCH_SECONDS,
                               # janaya: avoid SSLCertificateError
                               validate_certificate=False)
   except urlfetch_errors.Error:
     error_traceback = traceback.format_exc()
-    logging.warning('Error encountered while confirming subscription '
+    logging.debug('Error encountered while confirming subscription '
                     'to %s for callback %s:\n%s',
                     topic, callback, error_traceback)
     return False
-#SMOB: Start code to insert foaf profile
-#Check for all the functions where the foaf is passed
+  #SMOB: Start code to insert foaf profile
+  #Check for all the functions where the foaf is passed
   if 200 <= response.status_code < 300 and response.content == challenge:
     if mode == 'subscribe':
       Subscription.insert(callback, topic, foaf, verify_token, secret,
@@ -2147,7 +2145,7 @@ def confirm_subscription(mode, topic, callback, foaf, verify_token,
                  'topic = %s, foaf = %s; subscription archived', callback, topic, foaf)
     return True
   else:
-    logging.warning('Could not confirm subscription; encountered '
+    logging.debug('Could not confirm subscription; encountered '
                     'status %d with content: %s', response.status_code,
                     response.content)
     return False
@@ -2467,6 +2465,7 @@ class PublishHandler(PublishHandlerBase):
 
   @dos.limit(count=100, period=1)
   def post(self):
+    logging.debug("PublishHandler.post")
     self.response.headers['Content-Type'] = 'text/plain'
 
     mode = self.request.get('hub.mode')
@@ -2485,7 +2484,11 @@ class PublishHandler(PublishHandlerBase):
     # Maintain a hash Map with publisher and the topic here. Check if the publisher is already 
     # added to the RDF store for the topic. If not, add to the RDF store else just publish.
     foaf = self.request.get('hub.foaf', '')
+    logging.debug("urls: ")
+    logging.debug(urls)
     existing_urls = KnownFeed.check_exists(urls)
+    logging.debug("existing_urls: ")
+    logging.debug(existing_urls)
     logging.info('publishing list: %s', existing_urls)
     if len(urls) == len(existing_urls):
         logging.info('Already present in the publishing list: %s', urls)
@@ -2557,7 +2560,11 @@ def find_feed_updates(topic, format, feed_content,
   #SMOB: Collect the latest content changed so that the SPARQL Queries can be checked
   '''header_footer, entries_map = filter_feed(feed_content, format)'''
   #SMOB: Start code
+  logging.debug("calling filter_feed")
   header_footer, entries_map, restrictions_map = filter_feed(feed_content, format)
+  logging.debug(header_footer)
+  logging.debug(entries_map)
+  logging.debug(resctictions_map)
   restriction_keys = restrictions_map.keys()
   #SMOB: End code
   # Find the new entries we've never seen before, and any entries that we
@@ -2629,7 +2636,7 @@ def pull_feed(feed_to_fetch, fetch_url, headers):
     apiproxy_errors.Error if any RPC errors are encountered. urlfetch.Error if
     there are any fetching API errors.
   """
-  logging.debug("remove me, pull_feed urlfetch")
+  logging.debug("main.py, pull_feed urlfetch")
   response = urlfetch.fetch(
       fetch_url,
       headers=headers,
@@ -2665,7 +2672,7 @@ def pull_feed_async(feed_to_fetch, fetch_url, headers, async_proxy, callback):
              getattr(response, 'headers', None),
              getattr(response, 'content', None),
              exception)
-  logging.debug("remove me, pull_feed urlfetch_async")
+  logging.debug("main.py, wrapper, urlfetch_async")
 #  urlfetch_async.fetch(fetch_url,
 #                       headers=headers,
 #                       follow_redirects=False,
@@ -3038,6 +3045,7 @@ class PushEventHandler(webapp.RequestHandler):
 
   @work_queue_only
   def post(self):
+    logging.debug("main.py PushEventHandler.post")
     work = EventToDeliver.get(self.request.get('event_key'))
     if not work:
       logging.debug('No events to deliver.')
@@ -3224,6 +3232,7 @@ class RecordFeedHandler(webapp.RequestHandler):
 
   @work_queue_only
   def post(self):
+    logging.debug("main.py RecordFeedHandler.post")
     topic = self.request.get('topic')
     logging.debug('Recording topic = %s', topic)
 
@@ -3240,7 +3249,9 @@ class RecordFeedHandler(webapp.RequestHandler):
       known_feed = KnownFeed.create(topic)
 
     try:
-      response = urlfetch.fetch(topic)
+      response = urlfetch.fetch(topic,
+                              # janaya: avoid SSLCertificateError
+                              validate_certificate=False)
     except (apiproxy_errors.Error, urlfetch.Error), e:
       logging.warning('Could not fetch topic = %s for feed ID. %s: %s',
                       topic, e.__class__.__name__, e)

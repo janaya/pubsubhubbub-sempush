@@ -284,6 +284,7 @@ SELECT * WHERE { GRAPH <""" + graph_uri + """> { ?s ?p ?o } }"""
         else:
             graph = self.add_push_subscriber(foaf_graph, foaf_uri, topic, callback, smobAccount)
             self.insert(foaf_uri, graph)
+            logging.debug("Added %s to the store" % foaf_uri) 
         
 
     def get_or_create_publisher_profile(self, foaf_uri, topic):
@@ -293,12 +294,15 @@ SELECT * WHERE { GRAPH <""" + graph_uri + """> { ?s ?p ?o } }"""
         smobAccount = foaf_uri+"-smob"
         if store_graph:
             if foaf_uri in store_graph.subjects(RDF.type, FOAF["Person"]):
+                logging.debug("%s was already in the store" % foaf_uri) 
                 if topic not in store_graph.subjects(PUSH['has_owner'], URIRef(smobAccount)):
+                    logging.debug("%s was not yet in the store" % topic) 
                     graph = self.add_topic_has_owner(store_graph, topic, smobAccount)
                     self.update(foaf_uri, graph)
         else:
-            graph = self.add_push_publiher(foaf_graph, uri, topic, smobAccount)
+            graph = self.add_push_publiher(foaf_graph, foaf_uri, topic, smobAccount)
             self.insert(foaf_uri, graph)
+            logging.debug("Added %s to the store" % foaf_uri) 
 
 def main():
     so = SubscriberProfile()
