@@ -2190,9 +2190,9 @@ class SubscribeHandler(webapp.RequestHandler):
     else:
       topic = normalize_iri(topic)
     
-    # SMOB ?
+    # SMOB 
     if not foaf or not is_valid_url(foaf):
-      error_message = ('Invalid parameter: hub.foaf; ')
+      error_message = ('Invalid parameter: hub.foaf; foaf %s ' % foaf)
     else:
       foaf = normalize_iri(foaf)
 

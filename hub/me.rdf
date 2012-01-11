@@ -1,8 +1,3 @@
-
-<!-- Processed by Id: cwm.py,v 1.197 2007/12/13 15:38:39 syosi Exp -->
-<!--     using base file:///Users/hjs/Documents/card/card.n3-->
-
-
 <rdf:RDF xmlns="http://xmlns.com/foaf/0.1/"
     xmlns:cert="http://www.w3.org/ns/auth/cert#"
     xmlns:foaf="http://xmlns.com/foaf/0.1/"

@@ -17,6 +17,17 @@ skip_files:
 - ^(.*/)?feed_diff_testdata
 
 handlers:
+# SMOB
+- url: /me
+  static_files: me.rdf
+  upload: me\.rdf
+  secure: optional
+
+- url: /cert
+  static_files: hub_cert.pem
+  upload: hub_cert_key.pem
+  secure: always
+  
 - url: /base\.css
   static_files: base.css
   upload: base\.css

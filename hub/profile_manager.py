@@ -133,7 +133,7 @@ class ProfileManager:
         #                          validate_certificate=False)
         
         # timeout due to it is processing the subscriber cert and webid requests?
-        form_fields = {"cert_uri": HUB_CERTIFICATE_URI}
+        form_fields = {"cert_uri": HUB_CERTIFICATE_URI, "webid_uri": HUB_WEBID}
         form_data = urllib.urlencode(form_fields)
         response = urlfetch.fetch(url=foaf_uri,
                         payload=form_data,
@@ -157,10 +157,10 @@ class ProfileManager:
 
         foaf = response.content
         content_type = response.headers['content-type'].split(';')[0]
-        logging.debug(content_type)
+        logging.info(content_type)
         #logging.debug(response.status_code)
         #if response.status_code == 200:
-        logging.debug("foaf: " + foaf)
+        logging.info("foaf: " + foaf)
 
 
         # can't parse n3 with GAE
