@@ -25,7 +25,7 @@ handlers:
 
 - url: /cert
   static_files: hub_cert.pem
-  upload: hub_cert_key.pem
+  upload: hub_cert.pem
   secure: always
   
 - url: /base\.css
